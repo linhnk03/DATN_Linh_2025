@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "E:/Hoc_tap/Other"
+		},
+		{
+			"path": "E:/Hoc_tap/UET"
+		},
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"ostream": "cpp",
+			"*.tcc": "cpp",
+			"iostream": "cpp",
+			"iosfwd": "cpp",
+			"queue": "cpp",
+			"string": "cpp",
+			"stack": "cpp"
+		}
+	}
+}

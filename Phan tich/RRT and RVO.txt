@@ -1,0 +1,51 @@
+Việc kết hợp RRT (Rapidly-exploring Random Tree) và RVO (Reciprocal Velocity Obstacle) là một cách tiếp cận hiệu quả, kết hợp ưu điểm của cả lập kế hoạch đường đi toàn cục và tránh va chạm cục bộ. Dưới đây là cách bạn có thể thực hiện việc này, cùng với điều kiện kích hoạt tối ưu cục bộ (RVO) và cách triển khai:
+
+Mục tiêu của sự kết hợp:
+RRT sẽ đảm bảo rằng robot hoặc tác nhân có một kế hoạch đường đi tổng thể, đưa nó từ điểm xuất phát đến điểm đích thông qua các môi trường phức tạp có chứa nhiều chướng ngại vật.
+RVO sẽ chịu trách nhiệm tránh va chạm cục bộ khi robot di chuyển trên đường đi được lập kế hoạch, đặc biệt trong môi trường động (nơi có các tác nhân khác cũng đang di chuyển).
+Điều kiện kích hoạt RVO (tối ưu cục bộ):
+Khi có tác nhân khác gần kề: Nếu có các tác nhân khác di chuyển gần đó, bạn có thể kích hoạt RVO để tránh va chạm.
+
+Khoảng cách đến tác nhân khác: Đặt một ngưỡng khoảng cách, chẳng hạn như khi một tác nhân khác nằm trong bán kính nhất định so với tác nhân hiện tại, RVO sẽ được kích hoạt. Ngưỡng này sẽ tùy thuộc vào môi trường và tốc độ di chuyển của các tác nhân.
+Phát hiện xung đột vận tốc: Nếu các tác nhân có hướng di chuyển và vận tốc mà chúng có khả năng sẽ giao cắt trong thời gian ngắn, RVO sẽ được kích hoạt để thay đổi hướng đi và vận tốc nhằm tránh va chạm.
+Khi gặp chướng ngại động: Nếu trên đường đi đã lập kế hoạch có các chướng ngại động (như robot khác, người, xe cộ), RVO sẽ điều chỉnh vận tốc ngay lập tức để tránh va chạm.
+
+Khi đường đi được RRT lập kế hoạch không khả thi trong thời gian thực: Ví dụ, nếu một vật thể hoặc tác nhân động xuất hiện bất ngờ trên lộ trình, đường đi của RRT có thể không còn an toàn ngay tại thời điểm đó, và RVO sẽ kích hoạt để thực hiện điều chỉnh tránh va chạm tại chỗ.
+
+Cách thực thi sự kết hợp:
+Giai đoạn lập kế hoạch (RRT):
+
+Sử dụng RRT để tìm kiếm một đường đi toàn cục từ vị trí ban đầu đến mục tiêu. Đường đi này sẽ được chia thành các đoạn nhỏ hơn (waypoints) mà tác nhân sẽ di chuyển theo.
+Lưu các điểm đích tạm thời (waypoints) và chỉ ra lộ trình tổng quát mà tác nhân cần di chuyển.
+Giai đoạn điều khiển (RVO):
+
+Khi tác nhân di chuyển từ điểm hiện tại đến waypoint tiếp theo, RVO sẽ được kích hoạt bất cứ khi nào phát hiện tác nhân hoặc chướng ngại vật động ở gần.
+RVO sẽ điều chỉnh vận tốc và hướng đi của tác nhân một cách cục bộ để tránh va chạm với các đối tượng xung quanh. RVO đảm bảo rằng tác nhân vẫn di chuyển theo hướng waypoint tổng quát nhưng với những điều chỉnh nhỏ trong thời gian thực để tránh va chạm.
+Chuyển đổi giữa RRT và RVO:
+
+Trong quá trình di chuyển, nếu không có tác nhân nào gần kề và không có chướng ngại động, tác nhân sẽ tiếp tục di chuyển theo lộ trình do RRT lập kế hoạch.
+Nếu phát hiện nguy cơ va chạm hoặc có vật thể động tiến gần, RVO sẽ được kích hoạt để điều chỉnh vận tốc, tránh va chạm mà không cần thay đổi lộ trình toàn cục.
+Sau khi đã thoát khỏi vùng nguy hiểm hoặc tránh được các vật thể động, tác nhân sẽ tiếp tục di chuyển theo đường đi do RRT lập kế hoạch ban đầu.
+Triển khai cụ thể:
+Tạo đường đi RRT:
+
+Khi bắt đầu, thuật toán RRT sẽ tìm một con đường từ vị trí hiện tại đến mục tiêu, tạo ra các điểm kiểm tra (waypoints) trên đường đi.
+Di chuyển giữa các điểm kiểm tra:
+
+Tác nhân sẽ di chuyển từ điểm kiểm tra này đến điểm kiểm tra tiếp theo, theo hướng mà RRT đã đề xuất.
+Kích hoạt RVO trong thời gian thực:
+
+Tại mỗi khung thời gian, tính toán xem liệu có các tác nhân khác hoặc vật cản động trong vùng gần tác nhân hay không.
+Nếu phát hiện khả năng va chạm, thuật toán RVO sẽ được kích hoạt, điều chỉnh vận tốc của tác nhân để tránh va chạm.
+Trong khi RVO điều chỉnh đường đi cục bộ, tác nhân vẫn hướng về điểm kiểm tra tiếp theo nhưng ưu tiên việc tránh va chạm hơn.
+Tiếp tục với RRT sau khi tránh va chạm:
+
+Khi tác nhân đã tránh được va chạm, nó sẽ quay trở lại việc theo sát lộ trình toàn cục đã được RRT lập kế hoạch trước đó.
+Ưu điểm của sự kết hợp:
+Tối ưu toàn cục và tránh va chạm cục bộ: Sự kết hợp giữa RRT và RVO giúp đảm bảo rằng tác nhân có thể lập kế hoạch toàn cục tối ưu, đồng thời cũng có khả năng tự điều chỉnh trong thời gian thực để tránh các va chạm không lường trước.
+
+Linh hoạt trong môi trường động: RVO giúp tác nhân linh hoạt hơn khi đối mặt với các chướng ngại động hoặc tác nhân khác trong thời gian thực, đảm bảo sự an toàn và tránh va chạm hiệu quả.
+
+Tổng kết:
+RRT sẽ chịu trách nhiệm lập kế hoạch toàn cục, tạo ra đường đi từ điểm bắt đầu đến điểm đích trong không gian rộng lớn và phức tạp.
+RVO sẽ được kích hoạt cục bộ khi phát hiện nguy cơ va chạm với các tác nhân hoặc vật cản động, giúp điều chỉnh vận tốc và hướng di chuyển để tránh va chạm mà không làm thay đổi toàn bộ lộ trình do RRT đề ra.

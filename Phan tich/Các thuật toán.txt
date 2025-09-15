@@ -1,0 +1,29 @@
+Khi làm việc với nhiều drone, việc phân nhiệm và quản lý chúng hiệu quả là rất quan trọng. Dưới đây là một số thuật toán và phương pháp có thể giúp bạn phân chia nhiệm vụ cho nhiều drone:
+
+### 1. **Thuật Toán Phân Nhiệm (Task Allocation Algorithms)**
+
+#### a. **Thuật Toán Phân Nhiệm Cơ Bản**
+- **Round Robin**: Mỗi drone sẽ được giao nhiệm vụ theo thứ tự. Cách này đơn giản nhưng có thể không tối ưu cho các nhiệm vụ phức tạp.
+  
+#### b. **Thuật Toán Phân Nhiệm Dựa Trên Chi Phí**
+- **Auction Algorithm**: Mỗi drone "đấu giá" cho nhiệm vụ dựa trên chi phí thực hiện. Nhiệm vụ được giao cho drone có giá thầu thấp nhất.
+- **Hungarian Algorithm**: Sử dụng để tối ưu hóa việc phân bổ nhiệm vụ sao cho tổng chi phí thực hiện là thấp nhất. Phù hợp khi có nhiều nhiệm vụ và nhiều drone.
+
+### 2. **Thuật Toán Phân Tán**
+- **Consensus Algorithms**: Sử dụng các thuật toán đồng thuận (như Paxos hoặc Raft) để đảm bảo rằng tất cả drone đều đồng ý về nhiệm vụ của mình.
+- **Swarm Intelligence**: Mô phỏng hành vi của các loài động vật xã hội (như đàn kiến, bầy chim) để phân chia nhiệm vụ. Các drone có thể tự tìm kiếm và phân chia nhiệm vụ dựa trên trạng thái và môi trường.
+
+### 3. **Thuật Toán Lập Kế Hoạch Đường Đi**
+- **Multi-Agent Path Planning**: Các thuật toán như A* hoặc RRT có thể được mở rộng cho nhiều drone, giúp chúng lập kế hoạch đường đi mà không va chạm với nhau.
+- **Decoupled Planning**: Lập kế hoạch cho từng drone một cách độc lập và sau đó điều chỉnh để tránh va chạm.
+
+### 4. **Phân Tích Dữ Liệu và Machine Learning**
+- **Reinforcement Learning**: Sử dụng các thuật toán học máy để dạy drone cách phân chia nhiệm vụ dựa trên kinh nghiệm từ các nhiệm vụ trước đó.
+- **Clustering Algorithms**: Sử dụng các thuật toán phân cụm (như K-means) để nhóm các nhiệm vụ tương tự và giao cho các drone khác nhau.
+
+### 5. **Quản Lý Tình Huống (Situation Management)**
+- **Dynamic Task Allocation**: Các drone có thể tự động điều chỉnh nhiệm vụ của mình dựa trên tình huống thực tế, như tình trạng pin, độ cao, và thời gian thực hiện.
+- **Priority-Based Allocation**: Giao nhiệm vụ dựa trên độ ưu tiên, đảm bảo rằng các nhiệm vụ quan trọng được thực hiện trước.
+
+### Kết Luận
+Tùy thuộc vào yêu cầu cụ thể của dự án và môi trường hoạt động, bạn có thể chọn hoặc kết hợp các thuật toán và phương pháp trên. Nếu cần thêm thông tin chi tiết về một thuật toán cụ thể hoặc cách triển khai, hãy cho tôi biết!
