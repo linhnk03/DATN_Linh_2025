@@ -3858,11 +3858,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4ff67a2f827c4a444b0950e44cb25f93, type: 3}
---- !u!1 &805342586 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6398034314920381843, guid: 4ff67a2f827c4a444b0950e44cb25f93, type: 3}
-  m_PrefabInstance: {fileID: 805342585}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &838548717
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -6802,9 +6797,6 @@ MonoBehaviour:
   drones: []
   droneList: []
   shapeList:
-  - {fileID: 5235238441928578765}
-  - {fileID: 805342586}
-  - {fileID: 7480316712703761655}
   - {fileID: 5235238441928578765}
   indexTask: 0
   uiController: {fileID: 56530005}
@@ -11219,11 +11211,6 @@ PrefabInstance:
 --- !u!4 &7480316712703761654 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8114603532994786917, guid: 25b8cd5bd128d1b468428bef4afc1aa9, type: 3}
-  m_PrefabInstance: {fileID: 7480316712703761653}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7480316712703761655 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8974699177906110430, guid: 25b8cd5bd128d1b468428bef4afc1aa9, type: 3}
   m_PrefabInstance: {fileID: 7480316712703761653}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &8954493032835616969 stripped
