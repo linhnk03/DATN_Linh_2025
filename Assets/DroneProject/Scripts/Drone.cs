@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using System; // ADD
 
 public enum STATE_DRONE
 {
@@ -65,12 +66,23 @@ public class Drone : MonoBehaviour
         frameMover = GetComponent<DroneFrameInterpolator>();
     }
 
+    private void OnEnable()
+    {
+        if (DroneManager.instance != null)
+            DroneManager.instance.OnFrameAdvanced += HandleFrameAdvanced;
+    }
+
+    private void OnDisable()
+    {
+        if (DroneManager.instance != null)
+            DroneManager.instance.OnFrameAdvanced -= HandleFrameAdvanced;
+    }
+
     void Update()
     {
         if (inforDrone.id == -1 || transTarget == null) return;
         if (timeReset > 0) timeReset -= Time.deltaTime;
 
-        // Frame 0: keep your current physics-based steering (unchanged)
         if (DroneManager.instance.IndexFrame == 0)
         {
             Vector3 dir = transTarget.positions[DroneManager.instance.IndexFrame] - transform.position;
@@ -111,25 +123,50 @@ public class Drone : MonoBehaviour
 
             if (frameMover != null && !frameMover.IsMoving && f != lastInterpolatedFrame)
             {
-                Vector3 offset = Vector3.zero;
-
-                if (transTarget != null && transTarget.positions != null && f < transTarget.positions.Count)
-                {
-                     Vector3 absC = transTarget.positions[f];
-                     Vector3 deltaC = absC - transTarget.positions[f - 1];
-                     offset = (deltaC.sqrMagnitude <= absC.sqrMagnitude) ? deltaC : absC;
-                }
-
-                float speedOverride = DroneManager.instance.GetTransitionSpeedForDrone(inforDrone.id, f);
-
-                frameMover.MoveByOffset(offset, speedOverride, () =>
-                {
-                    lastInterpolatedFrame = f;
-                    DroneManager.instance.ShowDrone(inforDrone.id);
-                });
+                StartFrameMove(f);
             }
         }
     }
+
+    // Start a move for the given frame index f
+    void StartFrameMove(int f)
+    {
+        if (transTarget == null || transTarget.positions == null || f >= transTarget.positions.Count) return;
+
+        Vector3 offset;
+        if (f == 0)
+        {
+            offset = transTarget.positions[0] - transform.position;
+        }
+        else
+        {
+            Vector3 absC = transTarget.positions[f];
+            Vector3 deltaC = absC - transTarget.positions[f - 1];
+            // Heuristic: prefer delta when smaller
+            offset = (deltaC.sqrMagnitude <= absC.sqrMagnitude) ? deltaC : absC;
+        }
+
+        float speedOverride = DroneManager.instance.GetTransitionSpeedForDrone(inforDrone.id, f);
+
+        frameMover.MoveByOffset(offset, speedOverride, () =>
+        {
+            lastInterpolatedFrame = f;
+            DroneManager.instance.ShowDrone(inforDrone.id);
+            // Note: if this was the last drone to finish, the manager will raise OnFrameAdvanced,
+            // and HandleFrameAdvanced will start the next move immediately (no one-frame pause).
+        });
+    }
+
+    void HandleFrameAdvanced(int newFrameIndex)
+    {
+        if (inforDrone.id == -1 || transTarget == null) return;
+        // If we're idle and haven't yet finished this new frame, start immediately
+        if (frameMover != null && !frameMover.IsMoving && newFrameIndex != lastInterpolatedFrame)
+        {
+            StartFrameMove(newFrameIndex);
+        }
+    }
+
     public void SetValue(int id, bool isLocal)
     {
         useLocalOptimal = isLocal;

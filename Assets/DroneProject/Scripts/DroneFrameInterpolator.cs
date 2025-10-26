@@ -10,7 +10,7 @@ public class DroneFrameInterpolator : MonoBehaviour
     public float unitsPerSecond = 2f;
 
     [Tooltip("Easing curve for inter-frame transitions.")]
-    public AnimationCurve ease = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    public AnimationCurve ease = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
     Coroutine moveRoutine;
     Rigidbody rb;

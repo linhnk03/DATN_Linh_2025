@@ -7,11 +7,11 @@ using System.Text;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System; // ADD
 
 public class DroneManager : MonoBehaviour
 {
     public float speedDrone;
-    //public float interpolationSpeedDrone;
     public float moveTargetImportance;
     public float conflictDistanceImportance;
     public float distanceCheckDrone;
@@ -36,6 +36,9 @@ public class DroneManager : MonoBehaviour
     bool isEnd = false;
 
     Dictionary<int, float> nextTransitionSpeeds = new Dictionary<int, float>();
+
+    // NEW: fire when IndexFrame increases
+    public event Action<int> OnFrameAdvanced;
 
     private void Awake()
     {
@@ -97,16 +100,14 @@ public class DroneManager : MonoBehaviour
 
         return force;
     }
-    // helper để Drone lấy speed khi bắt đầu interpolation
+   
     public float GetTransitionSpeedForDrone(int droneId, int frameIndex)
     {
         if (nextTransitionSpeeds != null && nextTransitionSpeeds.TryGetValue(droneId, out var v))
-            return Mathf.Max(0.01f, v); // bảo đảm > 0
-        // fallback: dùng speedDrone làm mặc định
+            return Mathf.Max(0.01f, v);
         return Mathf.Max(0.01f, speedDrone);
     }
 
-    // Replace existing ShowDrone with this implementation
     public void ShowDrone(int id)
     {
         if (checkState.Contains(id)) return;
@@ -162,11 +163,13 @@ public class DroneManager : MonoBehaviour
                         var drone = drones[i].GetComponent<Drone>();
                         if (drone != null && drone.transTarget != null && drone.transTarget.positions != null && nextFrame < drone.transTarget.positions.Count)
                         {
-                            Vector3 absC = drone.transTarget.positions[nextFrame];
+
+                            var absC = drone.transTarget.positions[nextFrame];
                             Vector3 offset;
-                            if (nextFrame > 0 && nextFrame - 1 < drone.transTarget.positions.Count)
+                            if (nextFrame > 0)
                             {
-                                Vector3 deltaC = absC - drone.transTarget.positions[nextFrame - 1];
+                                var prev = drone.transTarget.positions[nextFrame - 1];
+                                var deltaC = absC - prev;
                                 offset = (deltaC.sqrMagnitude <= absC.sqrMagnitude) ? deltaC : absC;
                             }
                             else
@@ -206,6 +209,8 @@ public class DroneManager : MonoBehaviour
                 }
 
                 IndexFrame++;
+
+                OnFrameAdvanced?.Invoke(IndexFrame);
             }
         }
     }
