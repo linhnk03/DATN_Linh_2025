@@ -162,7 +162,17 @@ public class DroneManager : MonoBehaviour
                         var drone = drones[i].GetComponent<Drone>();
                         if (drone != null && drone.transTarget != null && drone.transTarget.positions != null && nextFrame < drone.transTarget.positions.Count)
                         {
-                            Vector3 offset = drone.transTarget.positions[nextFrame];
+                            Vector3 absC = drone.transTarget.positions[nextFrame];
+                            Vector3 offset;
+                            if (nextFrame > 0 && nextFrame - 1 < drone.transTarget.positions.Count)
+                            {
+                                Vector3 deltaC = absC - drone.transTarget.positions[nextFrame - 1];
+                                offset = (deltaC.sqrMagnitude <= absC.sqrMagnitude) ? deltaC : absC;
+                            }
+                            else
+                            {
+                                offset = absC;
+                            }
                             dist = offset.magnitude;
                         }
                     }

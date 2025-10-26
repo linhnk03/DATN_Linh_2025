@@ -109,12 +109,16 @@ public class Drone : MonoBehaviour
         {
             int f = DroneManager.instance.IndexFrame;
 
-            // Guard: don't restart the interpolation while it's already moving
             if (frameMover != null && !frameMover.IsMoving && f != lastInterpolatedFrame)
             {
                 Vector3 offset = Vector3.zero;
+
                 if (transTarget != null && transTarget.positions != null && f < transTarget.positions.Count)
-                    offset = transTarget.positions[f]; // per-frame delta
+                {
+                     Vector3 absC = transTarget.positions[f];
+                     Vector3 deltaC = absC - transTarget.positions[f - 1];
+                     offset = (deltaC.sqrMagnitude <= absC.sqrMagnitude) ? deltaC : absC;
+                }
 
                 float speedOverride = DroneManager.instance.GetTransitionSpeedForDrone(inforDrone.id, f);
 

@@ -130,7 +130,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d754570f985effd408d3d4455fc71e02, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speedDrone: 50
+  speedDrone: 25
   moveTargetImportance: 66
   conflictDistanceImportance: 20
   distanceCheckDrone: 2
