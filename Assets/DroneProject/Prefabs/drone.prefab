@@ -529,6 +529,7 @@ GameObject:
   - component: {fileID: 5986286415622946972}
   - component: {fileID: 5571650969950560862}
   - component: {fileID: 3175557687603569718}
+  - component: {fileID: 3048078632541448172}
   m_Layer: 0
   m_Name: drone
   m_TagString: Drone
@@ -690,6 +691,43 @@ CapsuleCollider:
   m_Height: 0.48904306
   m_Direction: 1
   m_Center: {x: 0.0070108324, y: 0.00031320006, z: 0.07648116}
+--- !u!114 &3048078632541448172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8413891394661903395}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2877efc617e65a458d5e55b1a7a5a15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  unitsPerSecond: 20
+  ease:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &8416584281424642233
 GameObject:
   m_ObjectHideFlags: 0

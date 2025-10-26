@@ -34,10 +34,10 @@ public class Drone : MonoBehaviour
 {
     public Data transTarget;
 
-    public InforDrone inforDrone {get; private set;}
-    
+    public InforDrone inforDrone { get; private set; }
+
     Rigidbody rb;
-    Light light;
+    Light droneLight;
     bool showLight = false;
     private const float deadZoneAngle = 150f;
     private const float tangentKick = 100f;
@@ -48,24 +48,32 @@ public class Drone : MonoBehaviour
 
     bool useLocalOptimal = false;
 
+    // NEW: Inter-frame mover
+    DroneFrameInterpolator frameMover;
+    // NEW: remember the last frame index we already completed interpolation for
+    int lastInterpolatedFrame = 0;
+
     private void Awake()
     {
         inforDrone = new InforDrone(-1);
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
 
-        light = GetComponentInChildren<Light>();
-        light.gameObject.SetActive(false);
+        droneLight = GetComponentInChildren<Light>();
+        if (droneLight != null) droneLight.gameObject.SetActive(false);
+
+        frameMover = GetComponent<DroneFrameInterpolator>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if(inforDrone.id == -1 || transTarget == null) return;
-        if(timeReset > 0) timeReset -= Time.deltaTime;
-        if (DroneManager.instance.indexFrame == 0)
+        if (inforDrone.id == -1 || transTarget == null) return;
+        if (timeReset > 0) timeReset -= Time.deltaTime;
+
+        // Frame 0: keep your current physics-based steering (unchanged)
+        if (DroneManager.instance.IndexFrame == 0)
         {
-            Vector3 dir = transTarget.positions[DroneManager.instance.indexFrame] - transform.position;
+            Vector3 dir = transTarget.positions[DroneManager.instance.IndexFrame] - transform.position;
             inforDrone.distance = dir.magnitude;
             float k = Mathf.Clamp(inforDrone.distance / DroneManager.instance.distanceMoveTarget, 0, 1);
 
@@ -74,7 +82,6 @@ public class Drone : MonoBehaviour
 
             if (_timeKickOff > 0 && !useLocalOptimal)
             {
-                //inforDrone.huong += new Vector3(0, 0, tangentKick);
                 _timeKickOff -= Time.deltaTime;
                 if (_timeKickOff <= 0)
                 {
@@ -82,30 +89,55 @@ public class Drone : MonoBehaviour
                 }
             }
             inforDrone.v = inforDrone.huong.normalized * DroneManager.instance.speedDrone * k;
+
             if (k < 0.1f && !showLight)
             {
+                // snap to exact target and stop physics drift
+                transform.position = transTarget.positions[0];
+                rb.velocity = Vector3.zero;
+                rb.useGravity = false;
+
                 inforDrone.state = STATE_DRONE.COMPLED;
                 ShowLight();
                 DroneManager.instance.ShowDrone(inforDrone.id);
+                // ready for next frame transitions
+                lastInterpolatedFrame = 0;
             }
             rb.velocity = inforDrone.v;
         }
         else
         {
-            rb.velocity = Vector3.zero;
-            rb.useGravity = false;
-            transform.position += transTarget.positions[DroneManager.instance.indexFrame];
-            DroneManager.instance.ShowDrone(inforDrone.id);
+            int f = DroneManager.instance.IndexFrame;
+
+            // Guard: don't restart the interpolation while it's already moving
+            if (frameMover != null && !frameMover.IsMoving && f != lastInterpolatedFrame)
+            {
+                Vector3 offset = Vector3.zero;
+                if (transTarget != null && transTarget.positions != null && f < transTarget.positions.Count)
+                    offset = transTarget.positions[f]; // per-frame delta
+
+                float speedOverride = DroneManager.instance.GetTransitionSpeedForDrone(inforDrone.id, f);
+
+                frameMover.MoveByOffset(offset, speedOverride, () =>
+                {
+                    lastInterpolatedFrame = f;
+                    DroneManager.instance.ShowDrone(inforDrone.id);
+                });
+            }
         }
     }
     public void SetValue(int id, bool isLocal)
     {
         useLocalOptimal = isLocal;
-        inforDrone = new InforDrone(id); 
-        light.gameObject.SetActive(true);
+        inforDrone = new InforDrone(id);
+        if (droneLight != null) droneLight.gameObject.SetActive(true);
     }
     public void SetTask(Data data)
     {
+        // Cancel any ongoing inter-frame motion when a new target (or local reassignment) is applied
+        if (frameMover != null) frameMover.Cancel();
+        lastInterpolatedFrame = 0;
+
         timeReset = 1;
         rb.useGravity = true;
         transTarget = data;
@@ -117,29 +149,27 @@ public class Drone : MonoBehaviour
     void ShowLight()
     {
         showLight = true;
-        light.color = colorShow;
+        if (droneLight != null) droneLight.color = colorShow;
     }
     public void SetColor(Color x)
     {
-        light.color = x;
+        if (droneLight != null) droneLight.color = x;
     }
     private void OnCollisionStay(Collision collision)
     {
         if (collision.transform.CompareTag("Drone"))
         {
-            // only consider collisions with other drones when following
             if (timeReset > 0f || (_timeKickOff > 0 && !useLocalOptimal) || inforDrone.state != STATE_DRONE.FOLLOW || collision.transform.GetComponent<Drone>().inforDrone.state == STATE_DRONE.ERRO) return;
 
-            Vector3 attractDir = inforDrone.huong.normalized;                           // intended flight
-            Vector3 repelDir = (transform.position - collision.transform.position)
-                                 .normalized;                                         // away from the other drone
+            Vector3 attractDir = inforDrone.huong.normalized;
+            Vector3 repelDir = (transform.position - collision.transform.position).normalized;
 
             float angle = Vector3.Angle(attractDir, repelDir);
             if (angle >= deadZoneAngle)
             {
                 _timeKickOff = timeKickOff;
                 inforDrone.state = STATE_DRONE.ERRO;
-                if(useLocalOptimal)
+                if (useLocalOptimal)
                     DroneManager.instance.RequestLocalReassignment(this);
             }
         }

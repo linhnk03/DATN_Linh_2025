@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 public class DroneManager : MonoBehaviour
 {
     public float speedDrone;
+    //public float interpolationSpeedDrone;
     public float moveTargetImportance;
     public float conflictDistanceImportance;
     public float distanceCheckDrone;
@@ -27,17 +28,20 @@ public class DroneManager : MonoBehaviour
     [SerializeField] int indexTask = 0;
     int nCheckShow = 0;
     public static DroneManager instance;
+    public int IndexFrame = 0;
     List<List<Data>> datas = new List<List<Data>>();
 
     public UI_Controller uiController;
     List<int> checkState = new List<int>();
     bool isEnd = false;
+
+    Dictionary<int, float> nextTransitionSpeeds = new Dictionary<int, float>();
+
     private void Awake()
     {
         indexTask = -1;
         instance = this;
     }
-    public int indexFrame = 0;
     // Start is called before the first frame update
     void Start()
     {
@@ -93,16 +97,47 @@ public class DroneManager : MonoBehaviour
 
         return force;
     }
+    // helper để Drone lấy speed khi bắt đầu interpolation
+    public float GetTransitionSpeedForDrone(int droneId, int frameIndex)
+    {
+        if (nextTransitionSpeeds != null && nextTransitionSpeeds.TryGetValue(droneId, out var v))
+            return Mathf.Max(0.01f, v); // bảo đảm > 0
+        // fallback: dùng speedDrone làm mặc định
+        return Mathf.Max(0.01f, speedDrone);
+    }
+
+    // Replace existing ShowDrone with this implementation
     public void ShowDrone(int id)
     {
         if (checkState.Contains(id)) return;
         checkState.Add(id);
         nCheckShow++;
-        if(nCheckShow == drones.Count)
+        if (nCheckShow == drones.Count)
         {
             checkState.Clear();
             nCheckShow = 0;
-            if (indexFrame == datas[indexTask][0].positions.Count - 1)
+
+            if (indexTask < 0 || indexTask >= datas.Count || datas[indexTask] == null || datas[indexTask].Count == 0)
+            {
+                Debug.LogWarning("ShowDrone: invalid current task data.");
+                isEnd = true;
+                return;
+            }
+
+            int currentFrameCount = datas[indexTask]
+                .Where(d => d != null && d.positions != null)
+                .Select(d => d.positions.Count)
+                .DefaultIfEmpty(0)
+                .Min();
+
+            if (currentFrameCount == 0)
+            {
+                Debug.LogWarning("ShowDrone: no frames found in current task.");
+                isEnd = true;
+                return;
+            }
+
+            if (IndexFrame >= currentFrameCount - 1)
             {
                 if (indexTask < datas.Count - 1)
                 {
@@ -115,7 +150,52 @@ public class DroneManager : MonoBehaviour
             }
             else
             {
-                indexFrame++;
+                int nextFrame = IndexFrame + 1;
+                nextTransitionSpeeds.Clear();
+
+                var distances = new List<float>(drones.Count);
+                for (int i = 0; i < drones.Count; i++)
+                {
+                    float dist = 0f;
+                    try
+                    {
+                        var drone = drones[i].GetComponent<Drone>();
+                        if (drone != null && drone.transTarget != null && drone.transTarget.positions != null && nextFrame < drone.transTarget.positions.Count)
+                        {
+                            Vector3 offset = drone.transTarget.positions[nextFrame];
+                            dist = offset.magnitude;
+                        }
+                    }
+                    catch { dist = 0f; }
+                    distances.Add(dist);
+                }
+
+                float maxDist = distances.Count > 0 ? distances.Max() : 0f;
+
+                float baselineDuration = (maxDist <= 1e-5f) ? 0f : maxDist / Mathf.Max(0.01f, speedDrone);
+
+                for (int i = 0; i < drones.Count; i++)
+                {
+                    float d = distances[i];
+                    float speedForDrone;
+                    if (baselineDuration <= 0f)
+                    {
+                        speedForDrone = Mathf.Max(0.01f, speedDrone);
+                    }
+                    else
+                    {
+                        speedForDrone = (d <= 1e-5f) ? Mathf.Max(0.01f, speedDrone) : (d / baselineDuration);
+                    }
+
+                    int droneId = i;
+                    var dComp = drones[i].GetComponent<Drone>();
+                    if (dComp != null && dComp.inforDrone != null && dComp.inforDrone.id >= 0)
+                        droneId = dComp.inforDrone.id;
+
+                    nextTransitionSpeeds[droneId] = speedForDrone;
+                }
+
+                IndexFrame++;
             }
         }
     }
@@ -138,7 +218,7 @@ public class DroneManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         indexTask++;
-        indexFrame = 0;
+        IndexFrame = 0;
         Hungarian.SetUpHungarian(datas[indexTask], ref drones);
     }
     public bool RequestLocalReassignment(Drone triggerDrone)
